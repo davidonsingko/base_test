@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- ✅ Base 验证用 -->
+  <meta name="base:app_id" content="69b8fe0c2d5d7c1605e632ff" />
+
+  <title>MintNFT1</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a, #1a1a2e);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: #111827;
+      padding: 30px;
+      border-radius: 16px;
+      width: 420px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #9ca3af;
+      margin-bottom: 20px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .connect { background: #2563eb; }
+    .mint { background: #9333ea; }
+    .disconnect { background: #4b5563; }
+
+    .status {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>MintNFT1</h1>
+  <p>Mint your NFT on Base network 🚀</p>
+
+  <button id="connectBtn" class="connect">连接钱包</button>
+  <button id="mintBtn" class="mint" style="display:none;">Mint NFT</button>
+  <button id="disconnectBtn" class="disconnect" style="display:none;">断开连接</button>
+
+  <div id="account" class="status"></div>
+  <div id="status" class="status"></div>
+
+  <div class="footer">
+    Powered by Base · NFT Mint dApp
+  </div>
+</div>
+
+<script>
+  let provider;
+  let signer;
+
+  const CONTRACT_ADDRESS = "你的合约地址";
+
+  const ABI = [
+    {
+      "inputs": [],
+      "name": "mint",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    }
+  ];
+
+  const connectBtn = document.getElementById("connectBtn");
+  const mintBtn = document.getElementById("mintBtn");
+  const disconnectBtn = document.getElementById("disconnectBtn");
+  const statusDiv = document.getElementById("status");
+  const accountDiv = document.getElementById("account");
+
+  async function connectWallet() {
+    if (!window.ethereum) {
+      alert("请安装钱包");
+      return;
+    }
+
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+
+    const address = await signer.getAddress();
+    accountDiv.innerText = "已连接: " + address;
+
+    connectBtn.style.display = "none";
+    mintBtn.style.display = "block";
+    disconnectBtn.style.display = "block";
+
+    await switchToBase();
+  }
+
+  async function switchToBase() {
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x2105" }]
+      });
+    } catch (err) {
+      console.log("切换失败", err);
+    }
+  }
+
+  async function mintNFT() {
+    try {
+      statusDiv.innerText = "Minting...";
+
+      const contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        ABI,
+        signer
+      );
+
+      const tx = await contract.mint({
+        value: 0
+      });
+
+      await tx.wait();
+
+      statusDiv.innerText = "✅ Mint 成功！";
+    } catch (err) {
+      console.error(err);
+      statusDiv.innerText = "❌ Mint 失败";
+    }
+  }
+
+  function disconnect() {
+    location.reload();
+  }
+
+  connectBtn.onclick = connectWallet;
+  mintBtn.onclick = mintNFT;
+  disconnectBtn.onclick = disconnect;
+</script>
+
+</body>
+</html>
